@@ -82,4 +82,8 @@ class BridgedInteractiveGrader(StandardGrader):
         if not isinstance(files, list):
             files = [files]
         files = [os.path.join(get_problem_root(self.problem.id), f) for f in files]
-        return compile_with_auxiliary_files(files, self.handler_data.lang, self.handler_data.compiler_time_limit)
+        flags = self.handler_data.get('flags', [])
+        should_cache = self.handler_data.get('cached', True)
+        return compile_with_auxiliary_files(
+            files, flags, self.handler_data.lang, self.handler_data.compiler_time_limit, should_cache
+        )
