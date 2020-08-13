@@ -298,8 +298,10 @@
 433	fspick
 434	pidfd_open
 435	clone3
+436	close_range
 437	openat2
 438	pidfd_getfd
+439	faccessat2
 512	rt_sigaction
 513	rt_sigreturn
 514	ioctl

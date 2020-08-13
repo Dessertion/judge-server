@@ -42,8 +42,8 @@ env = ConfigNode(
 _root = os.path.dirname(__file__)
 
 log_file = server_host = server_port = no_ansi = skip_self_test = no_watchdog = problem_regex = case_regex = None
+cli_history_file = cert_store = api_listen = None
 secure = no_cert_check = False
-cert_store = api_listen = None
 
 startup_warnings: List[str] = []
 cli_command: List[str] = []
@@ -53,7 +53,7 @@ exclude_executors: Set[str] = set()
 
 
 def load_env(cli=False, testsuite=False):  # pragma: no cover
-    global problem_dirs, only_executors, exclude_executors, log_file, server_host, server_port, no_ansi, no_ansi_emu, skip_self_test, env, startup_warnings, no_watchdog, problem_regex, case_regex, api_listen, secure, no_cert_check, cert_store, problem_watches, cli_command
+    global problem_dirs, only_executors, exclude_executors, log_file, server_host, server_port, no_ansi, no_ansi_emu, skip_self_test, env, startup_warnings, no_watchdog, problem_regex, case_regex, api_listen, secure, no_cert_check, cert_store, problem_watches, cli_history_file, cli_command
 
     if cli:
         description = 'Starts a shell for interfacing with a local judge instance.'
@@ -66,8 +66,14 @@ def load_env(cli=False, testsuite=False):  # pragma: no cover
         parser.add_argument('judge_name', nargs='?', help='judge name (overrides configuration)')
         parser.add_argument('judge_key', nargs='?', help='judge key (overrides configuration)')
         parser.add_argument('-p', '--server-port', type=int, default=9999, help='port to connect for the server')
-    else:
+    elif not testsuite:
         parser.add_argument('command', nargs='*', help='invoke CLI command without spawning shell')
+        parser.add_argument(
+            '--history',
+            type=str,
+            default='~/.dmoj_history',
+            help='file to load and save command history (default: ~/.dmoj_history)',
+        )
 
     parser.add_argument(
         '-c',
@@ -114,6 +120,9 @@ def load_env(cli=False, testsuite=False):  # pragma: no cover
     server_host = getattr(args, 'server_host', None)
     server_port = getattr(args, 'server_port', None)
     cli_command = getattr(args, 'command', [])
+    cli_history_file = getattr(args, 'history', None)
+    if cli_history_file:
+        cli_history_file = os.path.expanduser(cli_history_file)
 
     no_ansi = args.no_ansi
     skip_self_test = args.skip_self_test
@@ -192,10 +201,12 @@ _problem_root_cache: Dict[str, str] = {}
 
 
 def get_problem_root(problem_id):
-    if problem_id not in _problem_root_cache or not os.path.isdir(_problem_root_cache[problem_id]):
+    cached_root = _problem_root_cache.get(problem_id)
+    if cached_root is None or not os.path.isfile(os.path.join(cached_root, 'init.yml')):
         for root_dir in get_problem_roots():
             problem_root_dir = os.path.join(root_dir, problem_id)
-            if os.path.isdir(problem_root_dir):
+            problem_init = os.path.join(problem_root_dir, 'init.yml')
+            if os.path.isfile(problem_init):
                 _problem_root_cache[problem_id] = problem_root_dir
                 break
 

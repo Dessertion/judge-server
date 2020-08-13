@@ -4,6 +4,7 @@ from dmoj import judgeenv
 from dmoj.commands.base_command import Command
 from dmoj.error import InvalidCommandException
 from dmoj.executors import executors
+from dmoj.judge import Submission
 
 
 class SubmitCommand(Command):
@@ -72,14 +73,13 @@ class SubmitCommand(Command):
 
         self.judge.submission_id_counter += 1
         self.judge.graded_submissions.append((problem_id, language_id, src, time_limit, memory_limit))
-        self.judge.begin_grading(
-            self.judge.submission_id_counter,
-            problem_id,
-            language_id,
-            src,
-            time_limit,
-            memory_limit,
-            False,
-            {},
-            blocking=True,
-        )
+        try:
+            self.judge.begin_grading(
+                Submission(
+                    self.judge.submission_id_counter, problem_id, language_id, src, time_limit, memory_limit, False, {}
+                ),
+                blocking=True,
+                report=print,
+            )
+        except KeyboardInterrupt:
+            self.judge.abort_grading()
